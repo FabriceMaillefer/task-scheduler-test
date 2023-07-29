@@ -9,11 +9,11 @@
         <div class="sh-machines" >
             @foreach (var machine in _machines)
             {
-                <div class="sh-grid-cell sh-machine-row">
+                <div class="@($"sh-grid-cell sh-machine-row {(_hoverMachine == machine ? "active-machine " : " ")}")">
                     @machine.Name
                 </div>
             }
-            </div>
+        </div>
     </div>
     <div class="sh-scrollview">
         <div class="sh-grid" 
@@ -22,47 +22,71 @@
             @ondrop:preventDefault 
             ondragstart="event.dataTransfer.setData('text', event.target.id);"
             >
-    @foreach (var visibleStep in _visibleSteps)
-    {
-        <div class="sh-header">
-            @visibleStep.Title
-        </div>
-    }
-    @foreach (var machine in _machines)
-    {
         @foreach (var visibleStep in _visibleSteps)
         {
-            <div class="sh-grid-cell sh-machine-row" style="@($"grid-row: {machine.Row +1}; grid-column: {visibleStep.Column}")" 
-
-                @ondragover:preventDefault 
-                @ondragover="@((e) => HandleDragOver(e, visibleStep, machine))"
-                @ondragenter:preventDefault 
-                @ondragenter="()=> { }" 
-                @ondrop="@((e) => HandleDrop(e, visibleStep, machine))" 
-                @ondrop:preventDefault 
-                ondragstart="event.dataTransfer.setData('text', event.target.id);"
-                    @ondrop:stopPropagation
-                    @ondragenter:stopPropagation
-                    @ondragend:stopPropagation
-                    @ondragover:stopPropagation
-                    @ondragleave:stopPropagation
-                    @ondragstart:stopPropagation
-                >
+            <div class="sh-header">
+                @visibleStep.Title
             </div>
         }
-    }
 
-    @foreach (var workItem in _workItems.Where(e => e.Machine is not null))
-    {
-        <div class="sh-task" 
-            style="@($"grid-row: {workItem.Machine?.Row +1 ?? 0}; grid-column: {workItem.Start} / {workItem.Start + workItem.Duration}")"
-            >
-            <div class="gripper gripper-h-left cursor-col-resize" draggable="true" @ondragstart="(e) => GripperStartHandleDragStart(e, workItem)"></div>
-            <div class="movable" draggable="true" @ondragstart="(e) => HandleDragStart(e, workItem)">@workItem.Id - @workItem.Duration</div>
-            <div class="gripper gripper-h-right cursor-col-resize" draggable="true" @ondragstart="(e) => GripperEndHandleDragStart(e, workItem)"></div>
+        @foreach (var machine in _machines)
+        {
+            @foreach (var visibleStep in _visibleSteps)
+            {
+                <div class="@($"sh-grid-cell-bg sh-machine-row {(_hoverMachine == machine ? "active-machine " : " ")} {(_hoverStep == visibleStep ? "active-step " : " ")}")"  
+                style="@($"grid-row: {machine.Row +1}; grid-column: {visibleStep.Column}")" 
+                    >
+                </div>
+            }
+        }
+
+        @foreach (var workItem in _workItems.Where(e => e.Machine is not null))
+        {
+            <div class="@($"sh-task {(_selectedWorkItem == workItem ? "active " : " ")} {(_draggedWorkItem == workItem ? "dragged " : " ")}")" 
+            
+                @onclick="@(() => {_selectedWorkItem = workItem;})"
+                style="@($"grid-row: {workItem.Machine?.Row +1 ?? 0}; grid-column: {workItem.Start} / {workItem.Start + workItem.Duration}")"
+                >
+                <div class="gripper gripper-h-left cursor-col-resize" draggable="true" @ondragstart="(e) => GripperStartHandleDragStart(e, workItem)"></div>
+                <div class="sh-task-content movable" draggable="true" @ondragstart="(e) => HandleDragStart(e, workItem)">@workItem.Id - @workItem.Duration</div>
+                <div class="gripper gripper-h-right cursor-col-resize" draggable="true" @ondragstart="(e) => GripperEndHandleDragStart(e, workItem)"></div>
+            </div>
+        }
+
+        @if(_tempWorkItem is not null)
+        {
+            <div class="sh-task sh-task-temporary"
+                style="@($"grid-row: {_tempWorkItem.Machine?.Row +1 ?? 0}; grid-column: {_tempWorkItem.Start} / {_tempWorkItem.Start + _tempWorkItem.Duration}")"
+                >
+                <div class="sh-task-content">@_tempWorkItem.Id - @_tempWorkItem.Duration</div>
+            </div>
+        }
+
+        @foreach (var machine in _machines)
+        {
+            @foreach (var visibleStep in _visibleSteps)
+            {
+                <div class="sh-grid-cell sh-machine-row"  
+                style="@($"grid-row: {machine.Row +1}; grid-column: {visibleStep.Column}")" 
+
+                    @ondragover:preventDefault 
+                    @ondragover="@((e) => HandleDragOver(e, visibleStep, machine))"
+                    @ondragenter:preventDefault 
+                    @ondragenter="()=> { }" 
+                    @ondrop="@((e) => HandleDrop(e, visibleStep, machine))" 
+                    @ondrop:preventDefault 
+                    ondragstart="event.dataTransfer.setData('text', event.target.id);"
+                        @ondrop:stopPropagation
+                        @ondragenter:stopPropagation
+                        @ondragend:stopPropagation
+                        @ondragover:stopPropagation
+                        @ondragleave:stopPropagation
+                        @ondragstart:stopPropagation
+                    >
+                </div>
+            }
+        }
         </div>
-    }
-</div>
     </div>
 </div>
 
@@ -96,8 +120,6 @@
     }
 </div>
 
-
-
 <style>
 
     .sh-machine-row{
@@ -128,10 +150,21 @@
         grid-template-columns: repeat(52, 100px);
     }
 
-    .sh-grid .sh-grid-cell {
+    .sh-grid .sh-grid-cell{
+        z-index: 2;
+    }
+    .sh-grid .sh-grid-cell-bg {
         border-bottom: 1px solid darkgray;
         border-left: 1px solid darkgray;
         z-index: 0;
+    }
+
+    .sh-grid-cell-bg.active-step{
+        background-color: lightblue;
+    }
+
+    .sh-grid-cell-bg.active-machine{
+        background-color: lightblue;
     }
 
     .sh-machines .sh-grid-cell{
@@ -144,7 +177,7 @@
     .sh-task {
         margin: 4px;
         background-color: burlywood;
-        min-height: 15px;
+        min-height: 20px;
 
         z-index: 99;
 
@@ -153,10 +186,28 @@
         border-radius: 3px;
     }
 
-    .movable{
+    .sh-task.active{
+        background-color: bisque;
+        border-color: darkcyan;
+        border-width: 1px;
+    }
+
+    .sh-task.dragged{
+        display: none;
+    }
+
+    .sh-task-temporary{
+        border-style: dashed;
+        border-width: 1px;
+        background-color: antiquewhite;
+        z-index: 0;
+    }
+    .sh-task-content{
         width: 100%;
         text-align: center;
         align-self: center;
+    }
+    .movable{
         cursor: move;
     }
     .gripper{
@@ -195,11 +246,18 @@
 
 @code {
     List<Machine> _machines = new List<Machine>();
+    Machine? _hoverMachine = null;
 
     List<Step> _visibleSteps = new List<Step>();
+    Step? _hoverStep = null;
+
     List<WorkItem> _workItems = new List<WorkItem>();
 
+    WorkItem? _selectedWorkItem = null;
+
     WorkItem? _draggedWorkItem = null;
+    WorkItem? _tempWorkItem = null;
+
     bool _selectEndOfTask = false;
 
     [Inject]
@@ -210,7 +268,7 @@
             _workItems.Add(
                 new WorkItem(){ 
                     Id = $"WO{_workItems.Count+1}", 
-                Duration = _workItems.Count+1
+                    Duration = _workItems.Count+1
                 }
             );
         }
@@ -218,6 +276,7 @@
     private void GripperStartHandleDragStart(DragEventArgs e, WorkItem workItem)
     {
         Logger.LogInformation("GripperStartHandleDragStart {id}", workItem.Id);
+        _selectedWorkItem = workItem;
         _draggedWorkItem = workItem;
         _selectEndOfTask = false;
     }
@@ -225,12 +284,14 @@
     private void GripperEndHandleDragStart(DragEventArgs e, WorkItem workItem)
     {
         Logger.LogInformation("GripperEndHandleDragStart {id}", workItem.Id);
+        _selectedWorkItem = workItem;
         _draggedWorkItem = workItem;
         _selectEndOfTask = true;
     }
 
     private void HandleDragStart(DragEventArgs e, WorkItem workItem){
         Logger.LogInformation("HandleDragStart {id}", workItem.Id);
+        _selectedWorkItem = workItem;
         _draggedWorkItem = workItem;
         _selectEndOfTask = false;
     }
@@ -238,11 +299,14 @@
     private void HandleDrop(DragEventArgs e, Step? step, Machine? machine){
         Logger.LogInformation($"HandleDrop on {step?.Title}, {machine?.Name}, {_selectEndOfTask}");
 
+        _tempWorkItem = null;
+
         if(_draggedWorkItem is not null){
             _draggedWorkItem.Machine = machine;
 
             if(step is not null)
             {
+                _draggedWorkItem.Step = step;
                 if(_selectEndOfTask)
                 {
                     _draggedWorkItem.Start = step.Column - _draggedWorkItem.Duration + 1;
@@ -258,7 +322,20 @@
     }
 
     private void HandleDragOver(DragEventArgs e, Step? step, Machine? machine){
-        //Logger.LogInformation($"HandleDragOver on {step?.Title}, {machine?.Name}");
+        _hoverStep = step;
+        _hoverMachine = machine;
+        if(_draggedWorkItem is not null)
+        {
+            _tempWorkItem = new WorkItem(){
+                Duration = _draggedWorkItem.Duration,
+                Id = _draggedWorkItem.Id,
+                Machine = machine,
+                Step = step,
+                Start = step?.Column ?? 1
+            };
+        }
+        
+        Logger.LogInformation($"HandleDragOver on {step?.Title}, {machine?.Name}");
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -277,9 +354,19 @@
             });
         }
 
+         for (int i = 0; i < 52; i++)
+        {
+            _visibleSteps.Add(new Step()
+            {
+                Title = $"W{i+1}",
+                Column = i+1,
+            });
+        }
+
         _workItems.Add(new WorkItem(){
             Id = "WO1",
             Machine = _machines[0],
+            Step = _visibleSteps[2],
             Start = 3,
             Duration = 1,
         });
@@ -289,14 +376,7 @@
             Duration = 3,
         });
 
-        for (int i = 0; i < 52; i++)
-        {
-            _visibleSteps.Add(new Step()
-            {
-                Title = $"W{i+1}",
-                Column = i+1,
-            });
-        }
+       
 
         base.OnInitialized();
     }

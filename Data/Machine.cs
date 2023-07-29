@@ -8,6 +8,9 @@ namespace BlazorScheduleur.Data
 
     public class WorkItem{
         public Machine? Machine {get;set;}
+
+        public Step? Step {get;set;}
+
         public string Id {get;set;} = string.Empty;
 
         public int Start {get;set;}
